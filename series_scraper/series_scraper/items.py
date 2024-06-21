@@ -8,12 +8,12 @@ import scrapy
 
 class SeriesScraperItem(scrapy.Item):
     # define the fields for your item here like:
-    title = scrapy.Field()
-    synopsis = scrapy.Field()
-    date = scrapy.Field()
-    genre = scrapy.Field()
-    saison = scrapy.Field()
-    nationality = scrapy.Field()
-    casting = scrapy.Field()
+    Title = scrapy.Field()
+    Synopsis = scrapy.Field()
+    Date = scrapy.Field()
+    Genre = scrapy.Field()
+    Saison = scrapy.Field()
+    Nationality = scrapy.Field()
+    Casting = scrapy.Field()
     SaisonCount = scrapy.Field()
     EpisodeCount = scrapy.Field()

@@ -26,15 +26,15 @@ class FilmCrawlSpider(CrawlSpider):
 
     def parse_item(self, response):
         item = FilmscraperItem()
-        item["title"] = response.xpath("//div[@class='titlebar-title titlebar-title-xl']/text()").get()
-        item["date"] = response.xpath('//div[@class="meta-body-item meta-body-info"]/*/text()').get()
-        item["duree"] = response.xpath('//div[@class="meta-body-item meta-body-info"]/span[@class="spacer"][1]/following-sibling::text()[1]').get()
-        item["public"] = response.xpath("//div[@class='certificate']/*/text()").get()
-        item["synopsis"] = response.xpath("//div[@class='content-txt ']/*/text()").get()
-        item["langues"] = response.xpath('//span[text()="Langues"]/following-sibling::span/text()').get() # //section[@class="section ovw ovw-technical"]
-        item["annee"] = response.xpath('/span[text()="Année de production"]/following-sibling::span/text()').get() #//section[@class="section ovw ovw-technical"]/
+        item["Title"] = response.xpath("//div[@class='titlebar-title titlebar-title-xl']/text()").get()
+        item["Date"] = response.xpath('//div[@class="meta-body-item meta-body-info"]/*/text()').get()
+        item["Duree"] = response.xpath('//div[@class="meta-body-item meta-body-info"]/span[@class="spacer"][1]/following-sibling::text()[1]').get()
+        item["Public"] = response.xpath("//div[@class='certificate']/*/text()").get()
+        item["Synopsis"] = response.xpath("//div[@class='content-txt ']/*/text()").get()
+        item["Langues"] = response.xpath('//span[text()="Langues"]/following-sibling::span/text()').get() # //section[@class="section ovw ovw-technical"]
+        item["Annee"] = response.xpath('/span[text()="Année de production"]/following-sibling::span/text()').get() #//section[@class="section ovw ovw-technical"]/
         item["Type"] = response.xpath('//span[text()="Type de film"]/following-sibling::span/text()').get() #//section[@class="section ovw ovw-technical"]
-        item["genre"] = response.xpath('//span[@class="spacer"][2]/following-sibling::*/text()').getall()
+        item["Genre"] = response.xpath('//span[@class="spacer"][2]/following-sibling::*/text()').getall()
         
 
         casting_url = response.xpath('//a[contains(@href, "casting")]/@href').get()
@@ -44,7 +44,7 @@ class FilmCrawlSpider(CrawlSpider):
     def parse_casting(self, response):
         item = response.meta["item"]
         casting_xpath = "//div[@class='card person-card person-card-col']//div[@class='meta-title']//a/text() | //div[@class='card person-card person-card-col']//div[@class='meta-title']//span/text()"
-        item["casting"] = response.xpath(casting_xpath).getall()
+        item["Casting"] = response.xpath(casting_xpath).getall()
 
         critique_url = response.url.replace("casting/", "critiques/spectateurs/")
         if critique_url:
@@ -53,7 +53,7 @@ class FilmCrawlSpider(CrawlSpider):
     def parse_critiques(self, response):
         item = response.meta['item']
         critiques_xpath = '//section[@class="section mdl"]//span[@class="note"]/text()'
-        item["critiques_spec"] = response.xpath(critiques_xpath).get()
+        item["CritiquesSpec"] = response.xpath(critiques_xpath).get()
         yield item
 
 

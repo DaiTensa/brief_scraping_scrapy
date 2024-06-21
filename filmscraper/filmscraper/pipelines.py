@@ -23,14 +23,14 @@ class FilmscraperPipeline:
     
     def clean_title(self, item):
         adapter = ItemAdapter(item)
-        title = adapter.get('title')
-        adapter['title'] = title.strip()
+        title = adapter.get('Title')
+        adapter['Title'] = title.strip()
         return item
     
     def clean_langues(self, item):
         adapter = ItemAdapter(item)
-        langues = adapter.get('langues')
-        adapter['langues'] = langues.strip().replace('-', 'Null')
+        langues = adapter.get('Langues')
+        adapter['Langues'] = langues.strip().replace('-', 'Null')
         return item
     
     # def clean_actors(self, item):
@@ -49,9 +49,9 @@ class FilmscraperPipeline:
     
     def clean_duree(self, item):
         adapter = ItemAdapter(item)
-        duree = adapter.get('duree')
+        duree = adapter.get('Duree')
         duree_cleaned = duree.strip().replace(' ', '')
-        adapter['duree'] = duree_cleaned
+        adapter['Duree'] = duree_cleaned
         return item
 
 class MysqlDemoPipeline:
@@ -68,8 +68,8 @@ class MysqlDemoPipeline:
         self.cur.execute("""
         CREATE TABLE IF NOT EXISTS films(
             id int NOT NULL auto_increment, 
-            title text,
-            date text,
+            Title text,
+            Date text,
             PRIMARY KEY (id)
         )
         """)
@@ -77,12 +77,12 @@ class MysqlDemoPipeline:
     def process_item(self, item, spider):
 
         self.cur.execute(""" insert into films (title, date) values (%s,%s)""", (
-            item["title"],
-            str(item["date"])
+            item["Title"],
+            str(item["Date"])
         ))
 
         self.conn.commit()
-        
+
         return item
 
 

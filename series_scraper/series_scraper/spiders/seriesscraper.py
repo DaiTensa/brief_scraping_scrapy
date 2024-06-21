@@ -47,11 +47,11 @@ class SeriesscraperSpider(CrawlSpider):
 
     def parse_item(self, response):
         item = SeriesScraperItem()
-        item['title']= response.xpath("//div[@class='titlebar-title titlebar-title-xl']/span/text()").get()
-        item["synopsis"] = response.xpath("//div[@class='content-txt ']/*/text()").get()
-        item["genre"] = response.xpath('//span[@class="spacer"][2]/following-sibling::*/text()').getall()
-        item["date"] = response.xpath('//div[@class="meta-body-item meta-body-info"][1]/text()').get()
-        item["nationality"] = self.serie_nationality(response=response)
+        item['Title']= response.xpath("//div[@class='titlebar-title titlebar-title-xl']/span/text()").get()
+        item["Synopsis"] = response.xpath("//div[@class='content-txt ']/*/text()").get()
+        item["Genre"] = response.xpath('//span[@class="spacer"][2]/following-sibling::*/text()').getall()
+        item["Date"] = response.xpath('//div[@class="meta-body-item meta-body-info"][1]/text()').get()
+        item["Nationality"] = self.serie_nationality(response=response)
         item["SaisonCount"] = response.xpath("//div[@class='stats-numbers-row-item']/div/text()").get()
         item["EpisodeCount"] = response.xpath("//div[@class='stats-numbers-row stats-numbers-seriespage']//div[2]/div/text()").get()
         id_serie = self.series_id(response=response)
@@ -72,11 +72,11 @@ class SeriesscraperSpider(CrawlSpider):
             url_saison_details = saison.xpath('.//a[contains(@href, "saison")]/@href').get()
             if url_saison_details:
                 print(url_saison_details)
-                item['saison'] = saison.xpath('//h2/a/text()').get()
+                item['Saison'] = saison.xpath('//h2/a/text()').get()
                 yield response.follow(url_saison_details, self.parse_casting, meta={"item": item})
 
     def parse_casting(self, response):
         item = response.meta["item"]
         casting_xpath = "//div[@class='card person-card person-card-col']//div[@class='meta-title']//a/text() | //div[@class='card person-card person-card-col']//div[@class='meta-title']//span/text()"
-        item["casting"] = response.xpath(casting_xpath).getall()
+        item["Casting"] = response.xpath(casting_xpath).getall()
         yield item
