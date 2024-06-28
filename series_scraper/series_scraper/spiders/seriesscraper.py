@@ -3,6 +3,7 @@ from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import CrawlSpider, Rule
 from series_scraper.items import SeriesScraperItem
 import json
+from time import time
 import re
 
 
@@ -79,4 +80,5 @@ class SeriesscraperSpider(CrawlSpider):
         item = response.meta["item"]
         casting_xpath = "//div[@class='card person-card person-card-col']//div[@class='meta-title']//a/text() | //div[@class='card person-card person-card-col']//div[@class='meta-title']//span/text()"
         item["Casting"] = response.xpath(casting_xpath).getall()
+        item["Time"] = time()
         yield item
