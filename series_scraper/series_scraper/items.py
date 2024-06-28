@@ -17,3 +17,4 @@ class SeriesScraperItem(scrapy.Item):
     Casting = scrapy.Field()
     SaisonCount = scrapy.Field()
     EpisodeCount = scrapy.Field()
+    Time = scrapy.Field()
