@@ -9,22 +9,17 @@ from itemadapter import ItemAdapter
 import re
 import mysql.connector
 import os
+import datetime
 from dotenv import load_dotenv
 load_dotenv()
 
 
 class FilmscraperPipeline:
     def process_item(self, item, spider):
-        item = self.clean_title(item) # clean title
         item = self.clean_langues(item)
         # item = self.clean_actors(item)
-        item = self.clean_duree(item)
-        return item
-    
-    def clean_title(self, item):
-        adapter = ItemAdapter(item)
-        title = adapter.get('Title')
-        adapter['Title'] = title.strip()
+        # item = self.clean_duree(item)
+        item = self.clean_time(item)
         return item
     
     def clean_langues(self, item):
@@ -53,6 +48,14 @@ class FilmscraperPipeline:
         duree_cleaned = duree.strip().replace(' ', '')
         adapter['Duree'] = duree_cleaned
         return item
+    
+    def clean_time(self, item):
+        adapter = ItemAdapter(item)
+        time = adapter.get("Time")
+        time = datetime.datetime.fromtimestamp(time)
+        adapter["Time"] = time.strftime('%Y-%m-%d %H:%M:%S')
+        return item
+
 
 class MysqlDemoPipeline:
 
@@ -66,19 +69,21 @@ class MysqlDemoPipeline:
         )
         self.cur = self.conn.cursor()
         self.cur.execute("""
-        CREATE TABLE IF NOT EXISTS films(
-            id int NOT NULL auto_increment, 
-            Title text,
+        CREATE TABLE IF NOT EXISTS Films(
+            IdFilm int(10) UNSIGNED NOT NULL AUTO_INCREMENT, 
+            Title varchar(255),
             Date text,
-            PRIMARY KEY (id)
-        )
+            Time TIMESTAMP NOT NULL,
+            PRIMARY KEY (`IdFilm`) 
+        ) AUTO_INCREMENT=100 DEFAULT CHARSET=utf8;
         """)
 
     def process_item(self, item, spider):
 
-        self.cur.execute(""" insert into films (title, date) values (%s,%s)""", (
+        self.cur.execute(""" insert into Films (Title, Date, Time) values (%s,%s,%s)""", (
             item["Title"],
-            str(item["Date"])
+            item["Date"],
+            item["Time"]
         ))
 
         self.conn.commit()
