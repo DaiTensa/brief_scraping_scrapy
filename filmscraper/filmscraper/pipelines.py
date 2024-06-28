@@ -72,24 +72,72 @@ class MysqlDemoPipeline:
         CREATE TABLE IF NOT EXISTS Films(
             IdFilm int(10) UNSIGNED NOT NULL AUTO_INCREMENT, 
             Title varchar(255),
+            TitleOrigine varchar(255),
+            Synopsis text,
             Date text,
-            Time TIMESTAMP NOT NULL,
+            Duree text,
+            Directors text,
+            Actors text,
+            Public text,
+            Langues text,
+            Annee text,
+            Type text,
+            Genre text,
+            NoteUser text,
+            UserNoteCount text,
+            NotePress text,
+            PressNoteCount text,
+            CumulBoxOffice TIMESTAMP NOT NULL,
+            Time text,
             PRIMARY KEY (`IdFilm`) 
         ) AUTO_INCREMENT=100 DEFAULT CHARSET=utf8;
         """)
 
     def process_item(self, item, spider):
 
-        self.cur.execute(""" insert into Films (Title, Date, Time) values (%s,%s,%s)""", (
+        self.cur.execute(""" insert into Films (
+                        Title,
+                        TitleOrigine,
+                        Synopsis,
+                        Date,
+                        Duree,
+                        Directors,
+                        Actors,
+                        Public,
+                        Langues,
+                        Annee,
+                        Type,
+                        Genre,
+                        NoteUser,
+                        UserNoteCount,
+                        NotePress,
+                        PressNoteCount,
+                        CumulBoxOffice,
+                        Time
+                         ) values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", (
             item["Title"],
+            item["TitleOrigine"],
+            item["Synopsis"],
             item["Date"],
+            item["Duree"],
+            item["Directors"],
+            item["Actors"],
+            item["Public"],
+            item["Langues"],
+            item["Annee"],
+            item["Type"],
+            item["Genre"],
+            item["NoteUser"],
+            item["UserNoteCount"],
+            item["NotePress"],
+            item["PressNoteCount"],
+            item["CumulBoxOffice"],
             item["Time"]
         ))
 
         self.conn.commit()
 
         return item
-
 
     def close_spider(self, spider):
         self.cur.close()
