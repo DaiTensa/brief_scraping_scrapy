@@ -66,7 +66,9 @@ DEFAULT_REQUEST_HEADERS = {
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
    "filmscraper.pipelines.FilmscraperPipeline": 300,
-   "filmscraper.pipelines.MysqlDemoPipeline": 301,
+   "filmscraper.pipelines.PostgresPipeline": 301,
+#    "filmscraper.pipelines.MysqlPipeline": 301,
+#    
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
