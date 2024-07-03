@@ -14,7 +14,7 @@ class FilmscraperItem(scrapy.Item):
     DateSortie = scrapy.Field()
     Duree = scrapy.Field()
     Directors = scrapy.Field()
-    Actors = scrapy.Field()
+    Casting = scrapy.Field()
     Public = scrapy.Field()
     Langues = scrapy.Field()
     Annee = scrapy.Field()
