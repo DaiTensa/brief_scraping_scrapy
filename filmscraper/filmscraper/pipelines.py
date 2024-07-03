@@ -16,17 +16,18 @@ from dotenv import load_dotenv
 from scrapy.exceptions import DropItem
 load_dotenv()
 
-
+#Processing
 class FilmscraperPipeline:
+
     def process_item(self, item, spider):
         item = self.clean_title(item, spider)
         item = self.clean_original_title(item, spider)
         item = self.clean_synopsis(item, spider)
         item = self.clean_duree(item, spider)
-        item = self.clean_directors(item, spider)
-        item = self.clean_actors(item, spider)
+        item = self.clean_casting(item, spider)
         item = self.clean_public(item, spider)
         item = self.clean_langues(item, spider)
+        item = self.clean_date(item, spider)
         item = self.clean_time(item, spider)
         item = self.clean_note_presse_count(item, spider)
         item = self.clean_note_users_count(item, spider)
@@ -89,19 +90,38 @@ class FilmscraperPipeline:
             adapter["Duree"] = duree_en_minute
         return item
 
-    def clean_directors(self, item, spider):
+    def clean_casting(self, item, spider):
         adapter = ItemAdapter(item)
-        directors = adapter.get("Directors")
-        if directors:
-            adapter["Directors"] = directors.strip()
-        return item
 
-    def clean_actors(self, item, spider):
-        adapter = ItemAdapter(item)
-        actors = adapter.get("Actors")
-        if actors:
-            cleaned_actors = [actor.strip() for actor in actors]
-            adapter["Actors"] = ",".join(map(str, cleaned_actors))
+        casting = adapter.get("Casting")
+        directors = adapter.get("Directors")
+        liste_acteurs = []
+        liste_directors = []
+
+        if casting:
+
+            # si len(casting) = 9
+            # acteur 8 derniers, director 1 premier
+            if len(casting) >= 9:
+                liste_acteurs = casting[-8:]
+                liste_directors = casting[:-8]
+           
+            elif len(casting) <= 8:
+                liste_acteurs = casting[0:]
+                liste_directors = casting[0]
+  
+        # Nettoyer actors
+        cleaned_actors = [actor.strip() for actor in liste_acteurs]
+        adapter["Casting"] = ",".join(map(str, cleaned_actors))
+
+        # Nettoyer directors
+        if isinstance(liste_directors, list):
+            directors=  [director.strip() for director in liste_directors]
+            adapter["Directors"] =  ",".join(map(str, directors)) 
+        else:
+            directors = liste_directors.strip()
+            adapter["Directors"] = directors
+
         return item
 
     def clean_genre(self, item, spider):
@@ -178,43 +198,46 @@ class FilmscraperPipeline:
             adapter["CumulBoxOffice"] = int(box_office.strip())
         return item
 
-class PostgresPipeline:
+# MySQL
+class FilmPostgresPipeline:
 
     def __init__(self):
-        self.conn = psycopg2.connect(
-            host = os.getenv('PGHOST'),
-            user = urllib.parse.quote(os.getenv('PGUSER')),
-            password = urllib.parse.quote(os.getenv('PGPASSWORD')),
-            database = os.getenv('PGDATABASE'),
-            port = os.getenv('PGPORT')
+        self.conn = mysql.connector.connect(
+            host = os.getenv("HOST"),
+            port=os.getenv("PORT"),
+            user = os.getenv("USER_NAME"),
+            password = os.getenv("MYSAL_PASSWORD"),
+            database = os.getenv("DATA_BASE_NAME")
         )
         self.cur = self.conn.cursor()
+        
+    def create_film_table(self):
         self.cur.execute("""       
-        CREATE TABLE IF NOT EXISTS film (
-            IdFilm INTEGER PRIMARY KEY,
-            Title VARCHAR (100),
-            TitleOrigine VARCHAR (100),
-            Genre VARCHAR (100),
-            Public VARCHAR (100),
-            Synopsis VARCHAR NOT NULL,
-            Langues VARCHAR (50),
-            Type VARCHAR (50),
-            DateSortie VARCHAR NOT NULL,
-            Annee INTEGER NOT NULL,
-            Duree INTEGER NOT NULL,
-            Directors VARCHAR NOT NULL,
-            Actors VARCHAR NOT NULL,
-            NoteUser SERIAL NOT NULL ,
-            UserNoteCount INTEGER NOT NULL,
-            NotePress SERIAL NOT NULL,
-            PressNoteCount INTEGER NOT NULL,
-            CumulBoxOffice INTEGER NOT NULL,
+       CREATE TABLE IF NOT EXISTS film (
+            IdFilm INT PRIMARY KEY,
+            Title VARCHAR(100),
+            TitleOrigine VARCHAR(100) NULL,
+            Genre VARCHAR(100),
+            Public VARCHAR(100),
+            Synopsis TEXT,
+            Langues VARCHAR(50),
+            Type VARCHAR(50),
+            DateSortie VARCHAR(100) NOT NULL,
+            Annee INT NOT NULL,
+            Duree INT NOT NULL,
+            Directors VARCHAR(255) NOT NULL,
+            Casting VARCHAR(255) NOT NULL,
+            NoteUser FLOAT NOT NULL,
+            UserNoteCount INT NOT NULL,
+            NotePress FLOAT NOT NULL,
+            PressNoteCount INT NOT NULL,
+            CumulBoxOffice INT NOT NULL,
             TimeItem TIMESTAMP NOT NULL
-            )
+        );
         """)
         self.conn.commit()
 
-    def process_item(self, item, spider):
+    def insert_films_into_film_table(self, item, spider):
         try:
             # vérifier si le film existe dans la table film
             self.cur.execute("SELECT * FROM film WHERE IdFilm = %s", (item["IdFilm"],))
@@ -239,7 +262,7 @@ class PostgresPipeline:
                                 Annee,
                                 Duree,
                                 Directors,
-                                Actors,
+                                Casting,
                                 NoteUser,
                                 UserNoteCount,
                                 NotePress,
@@ -259,7 +282,7 @@ class PostgresPipeline:
                     item["Annee"],
                     item["Duree"],
                     item["Directors"],
-                    item["Actors"],
+                    item["Casting"],
                     item["NoteUser"],
                     item["UserNoteCount"],
                     item["NotePress"],
@@ -273,13 +296,137 @@ class PostgresPipeline:
             self.conn.rollback()
             spider.logger.error(f"Erreur lors de l'insertion dans la base de données: {e}")
             raise DropItem(f"Erreur lors de l'insertion dans la base de données: {e}")
+        return item
 
+    def process_item(self, item, spider):
+        self.create_film_table()
+        self.insert_films_into_film_table(item, spider)
         return item
 
     def close_spider(self, spider):
         self.cur.close()
         self.conn.close()
 
+# MySQL
+class PersonnesPostgresPipeline:
+
+    def __init__(self):
+        self.conn = mysql.connector.connect(
+            host = os.getenv("HOST"),
+            port=os.getenv("PORT"),
+            user = os.getenv("USER_NAME"),
+            password = os.getenv("MYSAL_PASSWORD"),
+            database = os.getenv("DATA_BASE_NAME")
+        )
+        self.cur = self.conn.cursor()
+        
+    def create_personne_table(self):
+        self.cur.execute("""
+        CREATE TABLE IF NOT EXISTS personnes (
+            IdPersonne INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+            Nom_Prenom VARCHAR(100) NOT NULL
+        )
+        """)
+        self.conn.commit()
+
+    def insert_personne_into_personne_table(self,item,spider):
+        try:
+            casting = item.get("Casting", "").split(',')
+            directors = item.get("Directors", "").split(',')
+            all_personnes = set(casting + directors)
+
+            for personne in all_personnes:
+                if personne:
+                    self.cur.execute("SELECT IdPersonne FROM personnes WHERE Nom_Prenom = %s", (personne.strip(),))
+                    result = self.cur.fetchone()
+
+                    if not result:
+                        self.cur.execute("INSERT INTO personnes (Nom_Prenom) VALUES (%s)", (personne.strip(),))
+                        self.conn.commit()
+
+        except psycopg2.Error as e:
+            self.conn.rollback()
+            spider.logger.error(f"Erreur lors de l'insertion dans la base de données: {e}")
+            raise DropItem(f"Erreur lors de l'insertion dans la base de données: {e}")
+
+        return item
+    
+    def process_item(self, item, spider):
+        self.create_personne_table()
+        self.insert_personne_into_personne_table(item, spider)
+        return item
+
+    def close_spider(self, spider):
+        self.cur.close()
+        self.conn.close()
+
+
+
+# MySQL
+class CastingFilmPostgresPipeline:
+    def __init__(self):
+        self.conn = mysql.connector.connect(
+            host = os.getenv("HOST"),
+            port=os.getenv("PORT"),
+            user = os.getenv("USER_NAME"),
+            password = os.getenv("MYSAL_PASSWORD"),
+            database = os.getenv("DATA_BASE_NAME")
+        )
+        self.cur = self.conn.cursor()
+
+    def create_casting_film_table(self):
+        self.cur.execute("""
+        CREATE TABLE IF NOT EXISTS filmcasting (
+            IdFilm INTEGER,
+            IdPersonne INTEGER,
+            Role VARCHAR(10),
+            PRIMARY KEY (IdFilm, IdPersonne),
+            FOREIGN KEY (IdFilm) REFERENCES film (IdFilm),
+            FOREIGN KEY (IdPersonne) REFERENCES personnes (IdPersonne)
+        )
+        """)
+        self.conn.commit()
+
+    def insert_personne_role_into_casting_film(self, item, spider):
+        try:
+            casting = item.get("Casting", "").split(',')
+            directors = item.get("Directors", "").split(',')
+
+            for actor in casting:
+                if actor:
+                    self.cur.execute("SELECT IdPersonne FROM personnes WHERE Nom = %s", (actor.strip(),))
+                    result = self.cur.fetchone()
+                    if result:
+                        self.cur.execute("INSERT INTO filmcasting (IdFilm, IdPersonne, Role) VALUES (%s, %s, %s)",
+                                         (item["IdFilm"], result[0], "Acteur"))
+                        self.conn.commit()
+
+            for director in directors:
+                if director:
+                    self.cur.execute("SELECT IdPersonne FROM personnes WHERE Nom = %s", (director.strip(),))
+                    result = self.cur.fetchone()
+                    if result:
+                        self.cur.execute("INSERT INTO filmcasting (IdFilm, IdPersonne, Role) VALUES (%s, %s, %s)",
+                                         (item["IdFilm"], result[0], "Realisateur"))
+                        self.conn.commit()
+
+        except psycopg2.Error as e:
+            self.conn.rollback()
+            spider.logger.error(f"Erreur lors de l'insertion dans la base de données: {e}")
+            raise DropItem(f"Erreur lors de l'insertion dans la base de données: {e}")
+
+        return item
+    
+    def process_item(self, item, spider):
+        self.create_casting_film_table()
+        self.insert_personne_role_into_casting_film(item, spider)
+        return item
+    
+    def close_spider(self, spider):
+        self.cur.close()
+        self.conn.close()
+
+# Test Mysql
 class MysqlPipeline:
 
     def __init__(self):
@@ -300,7 +447,7 @@ class MysqlPipeline:
             Date text,
             Duree text,
             Directors text,
-            Actors text,
+            Casting text,
             Public text,
             Langues text,
             Annee text,
@@ -325,7 +472,7 @@ class MysqlPipeline:
                         Date,
                         Duree,
                         Directors,
-                        Actors,
+                        Casting,
                         Public,
                         Langues,
                         Annee,
@@ -344,7 +491,7 @@ class MysqlPipeline:
             item["Date"],
             item["Duree"],
             item["Directors"],
-            item["Actors"],
+            item["Casting"],
             item["Public"],
             item["Langues"],
             item["Annee"],
