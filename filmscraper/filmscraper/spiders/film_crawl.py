@@ -29,16 +29,17 @@ class FilmCrawlSpider(CrawlSpider):
         )
 
     @classmethod
-    def get_js_str(cls, response):
-        js_str = response.xpath('//script[@type="text/javascript"][position() > 7][1]/text()').get()
-        js_str = js_str.replace('var dataLayer = dataLayer || ', '')
-        js_str = js_str.replace(';', '').strip()
-        data_dict = json.loads(js_str)
+    def get_java_script_text_type(cls, response):
+        java_script_text_type = response.xpath('//script[@type="text/javascript"][contains(text(),"var dataLayer = dataLayer")]/text()').get()
+        if isinstance(java_script_text_type, str):
+            java_script_text_type = java_script_text_type.replace('var dataLayer = dataLayer || ', '')
+            java_script_text_type = java_script_text_type.replace(';', '').strip()
+            data_dict = json.loads(java_script_text_type)
         return data_dict
     
     @classmethod
     def film_id(cls, response):
-        data_dict = cls.get_js_str(response=response)
+        data_dict = cls.get_java_script_text_type(response=response)
         id_film = data_dict[0]["movie_id"]
         return id_film
 
@@ -55,7 +56,7 @@ class FilmCrawlSpider(CrawlSpider):
         # Infos sur le film
         item["IdFilm"] = film_id
         item["Title"] = response.xpath('//div[@class="titlebar-title titlebar-title-xl"]/text()').get()
-        item["TitleOrigine"] = response.xpath('//div[@class="meta-body-item"]/span[2]/text()').get() or "Null"
+        item["TitleOrigine"] = response.xpath('//div[@class="meta-body-item"]/span[2]/text()').get()
         item["Genre"] = response.xpath('//div[@class="meta-body-item meta-body-info"]//span[@class="spacer"][2]/following-sibling::*/text()').getall()
         item["Public"] = response.xpath("//div[@class='certificate']/*/text()").get()
         item["Synopsis"] = response.xpath("//div[@class='content-txt ']/*/text()").get()
@@ -64,7 +65,8 @@ class FilmCrawlSpider(CrawlSpider):
         item["DateSortie"] = response.xpath('//div[@class="meta-body-item meta-body-info"]/span/text()').get()
         item["Annee"] = response.xpath('//span[text()="Année de production"]/following-sibling::span/text()').get() 
         item["Duree"] = response.xpath('//div[@class="meta-body-item meta-body-info"]//span[@class="spacer"][1]/following-sibling::text()[1]').get()
-        item["Directors"] = response.xpath('//div[@class="meta-body-item meta-body-direction meta-body-oneline"]/span[2]/text()').get()
+        # item["Directors"] = response.xpath('//div[@class="meta-body-item meta-body-direction meta-body-oneline"]/span[2]/text()').get()
+        item["Directors"] = "vide"
         
         # Recherche l'url de la page casting afin de scraper la liste d'acteurs
         casting_url = response.xpath('//a[contains(@href, "casting")]/@href').get()
@@ -74,14 +76,16 @@ class FilmCrawlSpider(CrawlSpider):
     # parse_cating permet de récupérer la liste de tous les acteurs pour chaque film
     def parse_casting(self, response):
         item = response.meta["item"]
-        casting_xpath = "//div[@class='card person-card person-card-col']//div[@class='meta-title']//a/text() | //div[@class='card person-card person-card-col']//div[@class='meta-title']//span/text()"
-        item["Actors"] = response.xpath(casting_xpath).getall()
+
+        #Liste des acteurs par film
+        actors = response.xpath("//div[@class='card person-card person-card-col']//div[@class='meta-title']//a | //div[@class='card person-card person-card-col']//div[@class='meta-title']//span")
+        item["Casting"] = actors.xpath('.//text()').getall()
 
         # naviguer vers la page critiques et récuperer les notes spectateurs
         critique_url = response.url.replace("casting/", "critiques/spectateurs/")
         if critique_url:
             yield response.follow(critique_url, self.parse_critiques_user, meta={"item": item})
-    
+            
     # parse_critiques_users : récupérer la note moyenne des spectaterus
     def parse_critiques_user(self, response):
         item = response.meta['item']
