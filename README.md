@@ -45,9 +45,11 @@ erDiagram
     
     Serie {}
     
-    Acteur {}
+    PERSONNES {}
     
-    Realisateur {}
+    FILMCASTING {}
+
+    SERIECASTING {}
 ```
 
 ### Les attributs
@@ -59,81 +61,128 @@ title: MCD Scrapping Allociné
 ---
 erDiagram
     Film {
-        int IdFilm
+        int IdFilm PK
         string Title
         string TitleOrigine
-        string Genre
-        string Public
         string Synopsis
-        string Langues
-        string Type
-        string Date_sortie
-        int Annee
+        datetime DateSortie
         int Duree
         string Directors
-        string Actors
+        string Casting
+        string Langues
+        int Annee
+        int Type
+        int Genre
+        datetime TimeItem
+        string NoteUser
         float NoteUser
         int UserNoteCount
         float NotePress
         int PressNoteCount
         string CumulBoxOffice
-        datetime Time_item
+      
     }
     
     Serie {
-        int IdSerie
+        int IdSerie PK
         string Title
+        string TitleOrigine
         string Synopsis
-        string Genre
         string Date
+        int Duree
+        string Genre
+        string Saison
+        string Directors
         string Nationality
         int SaisonCount
         int EpisodeCount
-        string Saison
         string Casting
-        datetime Time_item
     }
     
-    Acteur {
-        int IdActeur
-        string Nationality
-        date BirthDate
-        int Age
-        string Bio
+    PERSONNES {
+        int IdPersonne PK
+        string Nom_Prenom
+        string Role
     }
     
-    Realisateur {
-        int IdDirector
-        string Nationality
-        date BirthDate
-        int Age
-        string Bio
+    FILMCASTING {
+        int IdFilm FK
+        int IdPersonne FK
+    }
+    
+    SERIECASTING {
+        int IdSerie FK
+        int IdPersonne FK
+        int Saison
     }
 ```
+
 
 ## Les associations
- **FIlms**
-```mermaid
----
-title: MCD Scrapping Association Films
----
-erDiagram
-    Film {}
-    Acteur {}
-    Realisateur {}
-Film ||--o{ Acteur : "a pour acteurs"
-Film ||--o{ Realisateur : "a pour réalisateur"
-```
+ **Films et Series**
 
- **Series**
 ```mermaid
 ---
-title: MCD Scrapping Association Films
+title: MCD Scrapping Allociné
 ---
 erDiagram
-    Serie {}
-    Acteur {}
-    Realisateur {}
-Serie ||--o{ Acteur : "a pour acteurs"
-Serie ||--o{ Realisateur : "a pour réalisateur"
+    Film {
+        int IdFilm PK
+        string Title
+        string TitleOrigine
+        string Synopsis
+        datetime DateSortie
+        int Duree
+        string Directors
+        string Casting
+        string Langues
+        int Annee
+        int Type
+        int Genre
+        datetime TimeItem
+        string NoteUser
+        float NoteUser
+        int UserNoteCount
+        float NotePress
+        int PressNoteCount
+        string CumulBoxOffice
+      
+    }
+    
+    Serie {
+        int IdSerie PK
+        string Title
+        string TitleOrigine
+        string Synopsis
+        string Date
+        int Duree
+        string Genre
+        string Saison
+        string Directors
+        string Nationality
+        int SaisonCount
+        int EpisodeCount
+        string Casting
+    }
+    
+    PERSONNES {
+        int IdPersonne PK
+        string Nom_Prenom
+        string Role
+    }
+    
+    FILMCASTING {
+        int IdFilm FK
+        int IdPersonne FK
+    }
+    
+    SERIECASTING {
+        int IdSerie FK
+        int IdPersonne FK
+        int Saison
+    }
+Film ||--o{ FILMCASTING : dans
+PERSONNES ||--o{ FILMCASTING : joue
+PERSONNES ||--o{ SERIECASTING : joue
+Serie ||--o{ SERIECASTING : dans
 ```
